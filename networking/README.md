@@ -2,6 +2,6 @@
 
 These demos showcase networking and/or multiplayer features.
 
-Languages: All have GDScript, WebRTC uses some GDNative
+Languages: All have GDScript, WebRTC uses some GDExtension
 
-Renderers: Multiplayer Bomber is GLES 3, rest are GLES 2
+Renderer: All are Compatibility

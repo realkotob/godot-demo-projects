@@ -4,9 +4,9 @@ An example using a thread to load an image.
 
 Language: GDScript
 
-Renderer: GLES 2
+Renderer: Mobile
 
-Check out this demo on the asset library: https://godotengine.org/asset-library/asset/144
+Check out this demo on the asset library: https://godotengine.org/asset-library/asset/2782
 
 ## Screenshots
 

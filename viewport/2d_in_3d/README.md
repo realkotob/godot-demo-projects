@@ -1,12 +1,12 @@
 # 2D in 3D
 
-A demo showing how a 2D scene can be shown within a 3D one using viewports.
+A demo showing how a 2D scene can be shown within a 3D scene using viewports.
 
 Language: GDScript
 
-Renderer: GLES 2
+Renderer: Compatibility
 
-Check out this demo on the asset library: https://godotengine.org/asset-library/asset/129
+Check out this demo on the asset library: https://godotengine.org/asset-library/asset/2803
 
 ## How does it work?
 
@@ -19,4 +19,4 @@ which is then assigned to the quad's material's albedo texture.
 
 ## Screenshots
 
-![Screenshot](screenshots/pong.png)
+![Screenshot](screenshots/2d_in_3d.webp)

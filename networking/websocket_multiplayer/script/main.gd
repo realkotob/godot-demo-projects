@@ -3,30 +3,38 @@ extends Control
 const DEF_PORT = 8080
 const PROTO_NAME = "ludus"
 
-onready var _host_btn = $Panel/VBoxContainer/HBoxContainer2/HBoxContainer/Host
-onready var _connect_btn = $Panel/VBoxContainer/HBoxContainer2/HBoxContainer/Connect
-onready var _disconnect_btn = $Panel/VBoxContainer/HBoxContainer2/HBoxContainer/Disconnect
-onready var _name_edit = $Panel/VBoxContainer/HBoxContainer/NameEdit
-onready var _host_edit = $Panel/VBoxContainer/HBoxContainer2/Hostname
-onready var _game = $Panel/VBoxContainer/Game
+@onready var _host_btn: Button = $Panel/VBoxContainer/HBoxContainer2/HBoxContainer/Host
+@onready var _connect_btn: Button = $Panel/VBoxContainer/HBoxContainer2/HBoxContainer/Connect
+@onready var _disconnect_btn: Button = $Panel/VBoxContainer/HBoxContainer2/HBoxContainer/Disconnect
+@onready var _name_edit: LineEdit = $Panel/VBoxContainer/HBoxContainer/NameEdit
+@onready var _host_edit: LineEdit = $Panel/VBoxContainer/HBoxContainer2/Hostname
+@onready var _game: Control = $Panel/VBoxContainer/Game
 
-var peer = null
+var peer := WebSocketMultiplayerPeer.new()
 
-func _ready():
-	#warning-ignore-all:return_value_discarded
-	get_tree().connect("network_peer_disconnected", self, "_peer_disconnected")
-	get_tree().connect("network_peer_connected", self, "_peer_connected")
-	$AcceptDialog.get_label().align = Label.ALIGN_CENTER
-	$AcceptDialog.get_label().valign = Label.VALIGN_CENTER
+
+func _init() -> void:
+	peer.supported_protocols = ["ludus"]
+
+
+func _ready() -> void:
+	multiplayer.peer_connected.connect(_peer_connected)
+	multiplayer.peer_disconnected.connect(_peer_disconnected)
+	multiplayer.server_disconnected.connect(_close_network)
+	multiplayer.connection_failed.connect(_close_network)
+	multiplayer.connected_to_server.connect(_connected)
+
+	$AcceptDialog.get_label().horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	$AcceptDialog.get_label().vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	# Set the player name according to the system username. Fallback to the path.
 	if OS.has_environment("USERNAME"):
 		_name_edit.text = OS.get_environment("USERNAME")
 	else:
-		var desktop_path = OS.get_system_dir(0).replace("\\", "/").split("/")
+		var desktop_path := OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP).replace("\\", "/").split("/")
 		_name_edit.text = desktop_path[desktop_path.size() - 2]
 
 
-func start_game():
+func start_game() -> void:
 	_host_btn.disabled = true
 	_name_edit.editable = false
 	_host_edit.editable = false
@@ -35,7 +43,7 @@ func start_game():
 	_game.start()
 
 
-func stop_game():
+func stop_game() -> void:
 	_host_btn.disabled = false
 	_name_edit.editable = true
 	_host_edit.editable = true
@@ -44,48 +52,41 @@ func stop_game():
 	_game.stop()
 
 
-func _close_network():
-	if get_tree().is_connected("server_disconnected", self, "_close_network"):
-		get_tree().disconnect("server_disconnected", self, "_close_network")
-	if get_tree().is_connected("connection_failed", self, "_close_network"):
-		get_tree().disconnect("connection_failed", self, "_close_network")
-	if get_tree().is_connected("connected_to_server", self, "_connected"):
-		get_tree().disconnect("connected_to_server", self, "_connected")
+func _close_network() -> void:
 	stop_game()
-	$AcceptDialog.show_modal()
-	$AcceptDialog.get_close_button().grab_focus()
-	get_tree().set_network_peer(null)
+	$AcceptDialog.popup_centered()
+	$AcceptDialog.get_ok_button().grab_focus()
+	multiplayer.multiplayer_peer = null
+	peer.close()
 
 
-func _connected():
-	_game.rpc("set_player_name", _name_edit.text)
+func _connected() -> void:
+	_game.set_player_name.rpc(_name_edit.text)
 
 
-func _peer_connected(id):
+func _peer_connected(id: int) -> void:
 	_game.on_peer_add(id)
 
 
-func _peer_disconnected(id):
+func _peer_disconnected(id: int) -> void:
+	print("Disconnected %d" % id)
 	_game.on_peer_del(id)
 
 
-func _on_Host_pressed():
-	peer = WebSocketServer.new()
-	peer.listen(DEF_PORT, PoolStringArray(["ludus"]), true)
-	get_tree().connect("server_disconnected", self, "_close_network")
-	get_tree().set_network_peer(peer)
+func _on_Host_pressed() -> void:
+	multiplayer.multiplayer_peer = null
+	peer.create_server(DEF_PORT)
+	multiplayer.multiplayer_peer = peer
 	_game.add_player(1, _name_edit.text)
 	start_game()
 
 
-func _on_Disconnect_pressed():
+func _on_Disconnect_pressed() -> void:
 	_close_network()
 
 
-func _on_Connect_pressed():
-	peer = WebSocketClient.new()
-	peer.connect_to_url("ws://" + _host_edit.text + ":" + str(DEF_PORT), PoolStringArray([PROTO_NAME]), true)
-	get_tree().connect("connection_failed", self, "_close_network")
-	get_tree().connect("connected_to_server", self, "_connected")
-	get_tree().set_network_peer(peer)
+func _on_Connect_pressed() -> void:
+	multiplayer.multiplayer_peer = null
+	peer.create_client("ws://" + _host_edit.text + ":" + str(DEF_PORT))
+	multiplayer.multiplayer_peer = peer
 	start_game()

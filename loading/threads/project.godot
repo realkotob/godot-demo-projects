@@ -6,30 +6,30 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=4
+config_version=5
 
 [application]
 
 config/name="Loading in a Thread"
 config/description="An example using a thread to load an image."
+config/tags=PackedStringArray("best_practices", "demo", "official", "performance")
 run/main_scene="res://thread.tscn"
+config/features=PackedStringArray("4.2")
+run/low_processor_mode=true
+config/icon="res://icon.webp"
+run/stretch/aspect="expand"
+run/stretch/mode="canvas_items"
+
+[debug]
+
+gdscript/warnings/untyped_declaration=1
 
 [display]
 
-window/dpi/allow_hidpi=true
-window/stretch/mode="2d"
+window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-
-[gdnative]
-
-singletons=[  ]
-
-[memory]
-
-multithread/thread_rid_pool_prealloc=60
+window/vsync/vsync_mode=0
 
 [rendering]
 
-quality/driver/driver_name="GLES2"
-vram_compression/import_etc=true
-vram_compression/import_etc2=false
+renderer/rendering_method="mobile"

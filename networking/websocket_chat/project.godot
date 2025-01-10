@@ -6,25 +6,27 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=4
+config_version=5
 
 [application]
 
 config/name="WebSocket Chat Demo"
 config/description="This is a demo of a simple chat implemented using WebSockets, showing both how to host a websocket server from Godot and how to connect to it."
-run/main_scene="res://combo/combo.tscn"
-config/icon="res://icon.png"
+config/tags=PackedStringArray("demo", "network", "official")
+run/main_scene="res://combo.tscn"
+config/features=PackedStringArray("4.2")
+config/icon="res://icon.webp"
 
-[autoload]
+[debug]
 
-Utils="*res://utils.gd"
+gdscript/warnings/untyped_declaration=1
 
-[gdnative]
+[display]
 
-singletons=[  ]
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [rendering]
 
-quality/driver/driver_name="GLES2"
-vram_compression/import_etc=true
-vram_compression/import_etc2=false
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

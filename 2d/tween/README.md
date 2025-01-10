@@ -4,9 +4,9 @@ A demo showing advanced tween usage.
 
 Language: GDScript
 
-Renderer: GLES 2
+Renderer: Compatibility
 
-Check out this demo on the asset library: https://godotengine.org/asset-library/asset/146
+Check out this demo on the asset library: https://godotengine.org/asset-library/asset/2733
 
 ## Screenshots
 

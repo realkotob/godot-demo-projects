@@ -1,9 +1,17 @@
-extends Reference
 class_name JoyMapping
+extends RefCounted
 
+enum Type {
+	NONE,
+	BTN,
+	AXIS,
+}
 
-enum TYPE {NONE, BTN, AXIS}
-enum AXIS {FULL, HALF_PLUS, HALF_MINUS}
+enum Axis {
+	FULL,
+	HALF_PLUS,
+	HALF_MINUS,
+}
 
 const PLATFORMS = {
 	# From gamecontrollerdb
@@ -25,28 +33,28 @@ const PLATFORMS = {
 
 const BASE = {
 	# Buttons
-	"a": JOY_XBOX_A,
-	"b": JOY_XBOX_B,
-	"y": JOY_XBOX_Y,
-	"x": JOY_XBOX_X,
-	"start": JOY_START,
-	"back": JOY_SELECT,
-	"leftstick": JOY_BUTTON_8,
-	"rightstick": JOY_BUTTON_9,
-	"leftshoulder": JOY_L,
-	"rightshoulder": JOY_R,
-	"dpup": JOY_DPAD_UP,
-	"dpleft": JOY_DPAD_LEFT,
-	"dpdown": JOY_DPAD_DOWN,
-	"dpright": JOY_DPAD_RIGHT,
+	"a": JOY_BUTTON_A,
+	"b": JOY_BUTTON_B,
+	"y": JOY_BUTTON_Y,
+	"x": JOY_BUTTON_X,
+	"start": JOY_BUTTON_START,
+	"back": JOY_BUTTON_BACK,
+	"leftstick": JOY_BUTTON_LEFT_STICK,
+	"rightstick": JOY_BUTTON_RIGHT_STICK,
+	"leftshoulder": JOY_BUTTON_LEFT_SHOULDER,
+	"rightshoulder": JOY_BUTTON_RIGHT_SHOULDER,
+	"dpup": JOY_BUTTON_DPAD_UP,
+	"dpleft": JOY_BUTTON_DPAD_LEFT,
+	"dpdown": JOY_BUTTON_DPAD_DOWN,
+	"dpright": JOY_BUTTON_DPAD_RIGHT,
 
 	# Axis
-	"leftx": JOY_AXIS_0,
-	"lefty": JOY_AXIS_1,
-	"rightx": JOY_AXIS_2,
-	"righty": JOY_AXIS_3,
-	"lefttrigger": JOY_ANALOG_L2,
-	"righttrigger": JOY_ANALOG_R2,
+	"leftx": JOY_AXIS_LEFT_X,
+	"lefty": JOY_AXIS_LEFT_Y,
+	"rightx": JOY_AXIS_RIGHT_X,
+	"righty": JOY_AXIS_RIGHT_Y,
+	"lefttrigger": JOY_AXIS_TRIGGER_LEFT,
+	"righttrigger": JOY_AXIS_TRIGGER_RIGHT,
 }
 
 const XBOX = {
@@ -96,42 +104,46 @@ const XBOX_OSX = {
 	"righttrigger":"a5",
 }
 
-var type = TYPE.NONE
-var idx = -1
-var axis = AXIS.FULL
-var inverted = false
+var type := Type.NONE
+var idx := -1
+var axis := Axis.FULL
+var inverted := false
 
-
-func _init(p_type = TYPE.NONE, p_idx = -1, p_axis = AXIS.FULL):
+func _init(p_type: Type = Type.NONE, p_idx: int = -1, p_axis: Axis = Axis.FULL) -> void:
 	type = p_type
 	idx = p_idx
 	axis = p_axis
 
 
-func _to_string():
-	if type == TYPE.NONE:
+func _to_string() -> String:
+	if type == Type.NONE:
 		return ""
-	var ts = "b" if type == TYPE.BTN else "a"
-	var prefix = ""
-	var suffix = "~" if inverted else ""
+
+	var ts := "b" if type == Type.BTN else "a"
+	var prefix := ""
+	var suffix := "~" if inverted else ""
+
 	match axis:
-		AXIS.HALF_PLUS:
+		Axis.HALF_PLUS:
 			prefix = "+"
-		AXIS.HALF_MINUS:
+		Axis.HALF_MINUS:
 			prefix = "-"
+
 	return "%s%s%d%s" % [prefix, ts, idx, suffix]
 
 
-func to_human_string():
-	if type == TYPE.BTN:
+func to_human_string() -> String:
+	if type == Type.BTN:
 		return "Button %d" % idx
-	if type == TYPE.AXIS:
-		var prefix = ""
+
+	if type == Type.AXIS:
+		var prefix := ""
 		match axis:
-			AXIS.HALF_PLUS:
+			Axis.HALF_PLUS:
 				prefix = "(+) "
-			AXIS.HALF_MINUS:
+			Axis.HALF_MINUS:
 				prefix = "(-) "
-		var suffix = " (inverted)" if inverted else ""
+		var suffix := " (inverted)" if inverted else ""
 		return "Axis %s%d%s" % [prefix, idx, suffix]
+
 	return ""

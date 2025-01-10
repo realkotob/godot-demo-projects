@@ -1,14 +1,12 @@
 extends ScrollContainer
 
+@export var auto_scroll := false
 
-export(bool) var auto_scroll = false setget set_auto_scroll
-
-
-func _process(_delta):
+func _process(_delta: float) -> void:
 	if auto_scroll:
-		var scrollbar = get_v_scrollbar()
+		var scrollbar := get_v_scroll_bar()
 		scrollbar.value = scrollbar.max_value
 
 
-func set_auto_scroll(value):
-	auto_scroll = value
+func _on_check_box_scroll_toggled(button_pressed: bool) -> void:
+	auto_scroll = button_pressed

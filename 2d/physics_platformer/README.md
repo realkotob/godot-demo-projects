@@ -3,15 +3,15 @@
 This demo uses [`RigidBody2D`](https://docs.godotengine.org/en/latest/classes/class_rigidbody2d.html)
 for the player and enemies.
 These character controllers are more powerful than
-[`KinematicBody2D`](https://docs.godotengine.org/en/latest/classes/class_kinematicbody2d.html),
+[`CharacterBody2D`](https://docs.godotengine.org/en/latest/classes/class_characterbody2d.html),
 but can be more difficult to handle, as they require
-manual modification of the RigidBody velocity.
+manual modification of the RigidDynamicBody velocity.
 
 Language: GDScript
 
-Renderer: GLES 3 (particles are not available in GLES 2)
+Renderer: Forward+
 
-Check out this demo on the asset library: https://godotengine.org/asset-library/asset/119
+Check out this demo on the asset library: https://godotengine.org/asset-library/asset/2725
 
 ## How does it work?
 

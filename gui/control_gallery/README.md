@@ -11,10 +11,10 @@ space between panels to resize them.
 
 Language: GDScript
 
-Renderer: GLES 2
+Renderer: Compatibility
 
-Check out this demo on the asset library: https://godotengine.org/asset-library/asset/890
+Check out this demo on the asset library: https://godotengine.org/asset-library/asset/2766
 
 ## Screenshots
 
-![Screenshot](screenshots/control_gallery.png)
+![Screenshot](screenshots/control_gallery.webp)

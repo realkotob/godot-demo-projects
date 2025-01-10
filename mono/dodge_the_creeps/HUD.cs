@@ -1,9 +1,9 @@
 using Godot;
 
-public class HUD : CanvasLayer
+public partial class HUD : CanvasLayer
 {
     [Signal]
-    public delegate void StartGame();
+    public delegate void StartGameEventHandler();
 
     public void ShowMessage(string text)
     {
@@ -19,11 +19,10 @@ public class HUD : CanvasLayer
         ShowMessage("Game Over");
 
         var messageTimer = GetNode<Timer>("MessageTimer");
-        await ToSignal(messageTimer, "timeout");
+        await ToSignal(messageTimer, Timer.SignalName.Timeout);
 
-        var messageLabel = GetNode<Label>("MessageLabel");
-        messageLabel.Text = "Dodge the\nCreeps!";
-        messageLabel.Show();
+        ShowMessage("Dodge the\nCreeps!");
+        await ToSignal(GetTree().CreateTimer(1.0), SceneTreeTimer.SignalName.Timeout);
 
         GetNode<Button>("StartButton").Show();
     }
@@ -36,7 +35,7 @@ public class HUD : CanvasLayer
     public void OnStartButtonPressed()
     {
         GetNode<Button>("StartButton").Hide();
-        EmitSignal(nameof(StartGame));
+        EmitSignal(SignalName.StartGame);
     }
 
     public void OnMessageTimerTimeout()

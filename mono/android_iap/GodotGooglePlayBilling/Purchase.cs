@@ -12,7 +12,7 @@ namespace AndroidInAppPurchasesWithCSharp.GodotGooglePlayBilling
         Pending = 2,
     }
 
-    public class Purchase
+    public partial class Purchase
     {
         public Purchase() { }
 
@@ -22,7 +22,7 @@ namespace AndroidInAppPurchasesWithCSharp.GodotGooglePlayBilling
             {
                 try
                 {
-                    switch (key)
+                    switch (key.AsString())
                     {
                         case "order_id":
                             OrderId = (string)purchase[key];
@@ -31,7 +31,7 @@ namespace AndroidInAppPurchasesWithCSharp.GodotGooglePlayBilling
                             PackageName = (string)purchase[key];
                             break;
                         case "purchase_state":
-                            PurchaseState = (PurchaseState)purchase[key];
+                            PurchaseState = purchase[key].As<PurchaseState>();
                             break;
                         case "purchase_time":
                             PurchaseTime = Convert.ToInt64(purchase[key]);

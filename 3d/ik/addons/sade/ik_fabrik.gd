@@ -1,5 +1,5 @@
-tool
-extends Spatial
+@tool
+extends Node3D
 
 # A FABRIK IK chain with a middle joint helper.
 
@@ -8,15 +8,74 @@ const CHAIN_TOLERANCE = 0.01
 # The amount of interations the bone chain will go through in an attempt to get to the target position
 const CHAIN_MAX_ITER = 10
 
-export(NodePath) var skeleton_path setget _set_skeleton_path
-export(PoolStringArray) var bones_in_chain setget _set_bone_chain_bones
-export(PoolRealArray) var bones_in_chain_lengths setget _set_bone_chain_lengths
+@export var skeleton_path: NodePath:
+	set(value):
+		skeleton_path = value
+		# Because get_node doesn't work in the first call, we just want to assign instead
+		if first_call:
+			return
 
-export(int, "_process", "_physics_process", "_notification", "none") var update_mode = 0 setget _set_update_mode
+		if skeleton_path == null:
+			if debug_messages:
+				printerr(name, " - IK_FABRIK: No Nodepath selected for skeleton_path!")
+			return
 
-var target: Spatial = null
+		var temp = get_node(skeleton_path)
+		if temp != null:
+			# If it has the method "get_bone_global_pose" it is likely a Skeleton3D
+			if temp.has_method("get_bone_global_pose"):
+				skeleton = temp
+				bone_IDs = {}
 
-var skeleton: Skeleton
+				# (Delete all of the old bone nodes and) Make all of the bone nodes for each bone in the IK chain
+				_make_bone_nodes()
+
+				if debug_messages:
+					printerr(name, " - IK_FABRIK: Attached to a new skeleton")
+			# If not, then it's (likely) not a Skeleton3D node
+			else:
+				skeleton = null
+				if debug_messages:
+					printerr(name, " - IK_FABRIK: skeleton_path does not point to a skeleton!")
+		else:
+			if debug_messages:
+				printerr(name, " - IK_FABRIK: No Nodepath selected for skeleton_path!")
+
+
+@export var bones_in_chain: PackedStringArray:
+	set(value):
+		bones_in_chain = value
+		_make_bone_nodes()
+
+
+@export var bones_in_chain_lengths: PackedFloat32Array:
+	set(value):
+		bones_in_chain_lengths = value
+		total_length = INF
+
+
+@export_enum("_process", "_physics_process", "_notification", "none") var update_mode: int = 0:
+	set(value):
+		update_mode = value
+
+		set_process(false)
+		set_physics_process(false)
+		set_notify_transform(false)
+
+		if update_mode == 0:
+			set_process(true)
+		elif update_mode == 1:
+			set_process(true)
+		elif update_mode == 2:
+			set_notify_transform(true)
+		else:
+			if debug_messages:
+				printerr(name, " - IK_FABRIK: Unknown update mode. NOT updating skeleton")
+			return
+
+var target: Node3D = null
+
+var skeleton: Skeleton3D
 
 # A dictionary holding all of the bone IDs (from the skeleton) and a dictionary holding
 # all of the bone helper nodes
@@ -29,14 +88,14 @@ var chain_origin = Vector3()
 var total_length = INF
 # The amount of iterations we've been through, and whether or not we want to limit our solver to CHAIN_MAX_ITER
 # amounts of interations.
-export(int) var chain_iterations = 0
-export(bool) var limit_chain_iterations = true
+@export var chain_iterations: int = 0
+@export var limit_chain_iterations: bool = true
 # Should we reset chain_iterations on movement during our update method?
-export(bool) var reset_iterations_on_update = false
+@export var reset_iterations_on_update: bool = false
 
 # A boolean to track whether or not we want to move the middle joint towards middle joint target.
-export(bool) var use_middle_joint_target = false
-var middle_joint_target: Spatial = null
+@export var use_middle_joint_target: bool = false
+var middle_joint_target: Node3D = null
 
 # Have we called _set_skeleton_path or not already. Due to some issues using exported NodePaths,
 # we need to ignore the first _set_skeleton_path call.
@@ -51,45 +110,45 @@ func _ready():
 		# NOTE: You MUST have a node called Target as a child of this node!
 		# So we create one if one doesn't already exist.
 		if not has_node("Target"):
-			target = Spatial.new()
+			target = Node3D.new()
 			add_child(target)
 
-			if Engine.editor_hint:
+			if Engine.is_editor_hint():
 				if get_tree() != null:
 					if get_tree().edited_scene_root != null:
 						target.set_owner(get_tree().edited_scene_root)
 
-			target.name = "Target"
+			target.name = &"Target"
 		else:
 			target = $Target
 
 		# If we are in the editor, we want to make a sphere at this node
-		if Engine.editor_hint:
-			_make_editor_sphere_at_node(target, Color.magenta)
+		if Engine.is_editor_hint():
+			_make_editor_sphere_at_node(target, Color.MAGENTA)
 
 	if middle_joint_target == null:
 		if not has_node("MiddleJoint"):
-			middle_joint_target = Spatial.new()
+			middle_joint_target = Node3D.new()
 			add_child(middle_joint_target)
 
-			if Engine.editor_hint:
+			if Engine.is_editor_hint():
 				if get_tree() != null:
 					if get_tree().edited_scene_root != null:
 						middle_joint_target.set_owner(get_tree().edited_scene_root)
 
-			middle_joint_target.name = "MiddleJoint"
+			middle_joint_target.name = &"MiddleJoint"
 		else:
-			middle_joint_target = get_node("MiddleJoint")
+			middle_joint_target = get_node(^"MiddleJoint")
 
 		# If we are in the editor, we want to make a sphere at this node
-		if Engine.editor_hint:
+		if Engine.is_editor_hint():
 			_make_editor_sphere_at_node(middle_joint_target, Color(1, 0.24, 1, 1))
 
 	# Make all of the bone nodes for each bone in the IK chain
 	_make_bone_nodes()
 
 	# Make sure we're using the right update mode
-	_set_update_mode(update_mode)
+	update_mode = update_mode
 
 
 # Various upate methods
@@ -117,11 +176,11 @@ func _notification(what):
 func update_skeleton():
 	#### ERROR CHECKING conditions
 	if first_call:
-		_set_skeleton_path(skeleton_path)
+		skeleton_path = skeleton_path
 		first_call = false
 
 		if skeleton == null:
-			_set_skeleton_path(skeleton_path)
+			skeleton_path = skeleton_path
 
 		return
 
@@ -131,7 +190,7 @@ func update_skeleton():
 		return
 	if bones_in_chain_lengths == null:
 		if debug_messages:
-			printerr(name, " - IK_FABRIK: No Bone lengths in IK chain defined!")
+			printerr(name, " - IK_FABRIK: No Bone3D lengths in IK chain defined!")
 		return
 
 	if bones_in_chain.size() != bones_in_chain_lengths.size():
@@ -241,7 +300,7 @@ func chain_backward():
 		var r = prev_origin - curr_origin
 		var l = bones_in_chain_lengths[i] / r.length()
 		# Apply the new joint position
-		bone_nodes[i].global_transform.origin = prev_origin.linear_interpolate(curr_origin, l)
+		bone_nodes[i].global_transform.origin = prev_origin.lerp(curr_origin, l)
 
 
 # Forward reaching pass
@@ -257,7 +316,7 @@ func chain_forward():
 		var r = next_origin - curr_origin
 		var l = bones_in_chain_lengths[i] / r.length()
 		# Apply the new joint position, (potentially with constraints), to the bone node
-		bone_nodes[i + 1].global_transform.origin = curr_origin.linear_interpolate(next_origin, l)
+		bone_nodes[i + 1].global_transform.origin = curr_origin.lerp(next_origin, l)
 
 
 # Make all of the bones rotated correctly.
@@ -276,8 +335,8 @@ func chain_apply_rotation():
 				var b_target_two = bone_nodes[i-1].global_transform
 
 				# Convert the bone nodes positions from world space to bone/skeleton space
-				b_target.origin = skeleton.global_transform.xform_inv(b_target.origin)
-				b_target_two.origin = skeleton.global_transform.xform_inv(b_target_two.origin)
+				b_target.origin = b_target.origin * skeleton.global_transform
+				b_target_two.origin = b_target_two.origin * skeleton.global_transform
 
 				# Get the direction that the previous bone is pointing towards
 				var dir = (target.global_transform.origin - b_target_two.origin).normalized()
@@ -292,7 +351,7 @@ func chain_apply_rotation():
 
 			else:
 				var b_target = target.global_transform
-				b_target.origin = skeleton.global_transform.xform_inv(b_target.origin)
+				b_target.origin = b_target.origin * skeleton.global_transform
 				bone_trans = bone_trans.looking_at(b_target.origin, Vector3.UP)
 
 				# A bit of a hack. Because we only have two bones, we have to use the previous
@@ -312,8 +371,8 @@ func chain_apply_rotation():
 			var b_target_two = bone_nodes[i+1].global_transform
 
 			# Convert the bone nodes positions from world space to bone/skeleton space
-			b_target.origin = skeleton.global_transform.xform_inv(b_target.origin)
-			b_target_two.origin = skeleton.global_transform.xform_inv(b_target_two.origin)
+			b_target.origin = b_target.origin * skeleton.global_transform
+			b_target_two.origin = b_target_two.origin * skeleton.global_transform
 
 			# Get the direction towards the next bone
 			var dir = (b_target_two.origin - b_target.origin).normalized()
@@ -332,12 +391,12 @@ func chain_apply_rotation():
 
 func get_bone_transform(bone, convert_to_world_space = true):
 	# Get the global transform of the bone
-	var ret: Transform = skeleton.get_bone_global_pose(bone_IDs[bones_in_chain[bone]])
+	var ret: Transform3D = skeleton.get_bone_global_pose(bone_IDs[bones_in_chain[bone]])
 
 	# If we need to convert the bone position from bone/skeleton space to world space, we
 	# use the Xform of the skeleton (because bone/skeleton space is relative to the position of the skeleton node).
 	if convert_to_world_space:
-		ret.origin = skeleton.global_transform.xform(ret.origin)
+		ret.origin = skeleton.global_transform * (ret.origin)
 
 	return ret
 
@@ -352,9 +411,9 @@ func set_bone_transform(bone, trans):
 func _make_editor_sphere_at_node(node, color):
 	# So we can see the target in the editor, let's create a mesh instance,
 	# Add it as our child, and name it
-	var indicator = MeshInstance.new()
+	var indicator = MeshInstance3D.new()
 	node.add_child(indicator)
-	indicator.name = "(EditorOnly) Visual indicator"
+	indicator.name = &"(EditorOnly) Visual indicator"
 
 	# We need to make a mesh for the mesh instance.
 	# The code below makes a small sphere mesh
@@ -366,69 +425,12 @@ func _make_editor_sphere_at_node(node, color):
 
 	# The mesh needs a material (unless we want to use the defualt one).
 	# Let's create a material and use the EditorGizmoTexture to texture it.
-	var indicator_material = SpatialMaterial.new()
+	var indicator_material = StandardMaterial3D.new()
 	indicator_material.flags_unshaded = true
 	indicator_material.albedo_texture = preload("editor_gizmo_texture.png")
 	indicator_material.albedo_color = color
 	indicator_mesh.material = indicator_material
 	indicator.mesh = indicator_mesh
-
-
-############# SETGET FUNCTIONS #############
-
-func _set_update_mode(new_value):
-	update_mode = new_value
-
-	set_process(false)
-	set_physics_process(false)
-	set_notify_transform(false)
-
-	if update_mode == 0:
-		set_process(true)
-	elif update_mode == 1:
-		set_process(true)
-	elif update_mode == 2:
-		set_notify_transform(true)
-	else:
-		if debug_messages:
-			printerr(name, " - IK_FABRIK: Unknown update mode. NOT updating skeleton")
-		return
-
-
-func _set_skeleton_path(new_value):
-	# Because get_node doesn't work in the first call, we just want to assign instead
-	if first_call:
-		skeleton_path = new_value
-		return
-
-	skeleton_path = new_value
-
-	if skeleton_path == null:
-		if debug_messages:
-			printerr(name, " - IK_FABRIK: No Nodepath selected for skeleton_path!")
-		return
-
-	var temp = get_node(skeleton_path)
-	if temp != null:
-		# If it has the method "get_bone_global_pose" it is likely a Skeleton
-		if temp.has_method("get_bone_global_pose"):
-			skeleton = temp
-			bone_IDs = {}
-
-			# (Delete all of the old bone nodes and) Make all of the bone nodes for each bone in the IK chain
-			_make_bone_nodes()
-
-			if debug_messages:
-				printerr(name, " - IK_FABRIK: Attached to a new skeleton")
-		# If not, then it's (likely) not a Skeleton node
-		else:
-			skeleton = null
-			if debug_messages:
-				printerr(name, " - IK_FABRIK: skeleton_path does not point to a skeleton!")
-	else:
-		if debug_messages:
-			printerr(name, " - IK_FABRIK: No Nodepath selected for skeleton_path!")
-
 
 ############# OTHER (NON IK SOLVER RELATED) FUNCTIONS #############
 
@@ -440,11 +442,11 @@ func _make_bone_nodes():
 
 		var bone_name = bones_in_chain[bone]
 		if not has_node(bone_name):
-			var new_node = Spatial.new()
+			var new_node = Node3D.new()
 			bone_nodes[bone] = new_node
 			add_child(bone_nodes[bone])
 
-			if Engine.editor_hint:
+			if Engine.is_editor_hint():
 				if get_tree() != null:
 					if get_tree().edited_scene_root != null:
 						bone_nodes[bone].set_owner(get_tree().edited_scene_root)
@@ -455,16 +457,5 @@ func _make_bone_nodes():
 			bone_nodes[bone] = get_node(bone_name)
 
 		# If we are in the editor, we want to make a sphere at this node
-		if Engine.editor_hint:
+		if Engine.is_editor_hint():
 			_make_editor_sphere_at_node(bone_nodes[bone], Color(0.65, 0, 1, 1))
-
-
-func _set_bone_chain_bones(new_value):
-	bones_in_chain = new_value
-
-	_make_bone_nodes()
-
-
-func _set_bone_chain_lengths(new_value):
-	bones_in_chain_lengths = new_value
-	total_length = INF

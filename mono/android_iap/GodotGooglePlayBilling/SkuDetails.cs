@@ -4,7 +4,7 @@ using Godot.Collections;
 
 namespace AndroidInAppPurchasesWithCSharp.GodotGooglePlayBilling
 {
-    public class SkuDetails
+    public partial class SkuDetails
     {
         public SkuDetails() { }
 
@@ -14,7 +14,7 @@ namespace AndroidInAppPurchasesWithCSharp.GodotGooglePlayBilling
             {
                 try
                 {
-                    switch (key)
+                    switch (key.AsString())
                     {
                         case "sku":
                             Sku = (string)skuDetails[key];
@@ -62,7 +62,7 @@ namespace AndroidInAppPurchasesWithCSharp.GodotGooglePlayBilling
                             SubscriptionPeriod = (string)skuDetails[key];
                             break;
                         case "type":
-                            switch(skuDetails[key])
+                            switch(skuDetails[key].AsString())
                             {
                                 case "inapp":
                                     Type = PurchaseType.InApp;

@@ -1,10 +1,9 @@
 extends "../motion.gd"
 
-# warning-ignore-all:unused_class_variable
-var speed = 0.0
-var velocity = Vector2()
+var speed := 0.0
+var velocity := Vector2()
 
-func handle_input(event):
+func handle_input(event: InputEvent) -> void:
 	if event.is_action_pressed("jump"):
-		emit_signal("finished", "jump")
-	return .handle_input(event)
+		finished.emit("jump")
+	return super.handle_input(event)

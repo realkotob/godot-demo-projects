@@ -1,4 +1,6 @@
-extends RigidBody
+class_name Bullet
+extends RigidBody3D
 
-#warning-ignore:unused_class_variable
-var enabled = true
+## If `true`, the bullet can hit enemies. This is set to `false` when the bullet
+## hits an enemy so it can't hit an enemy multiple times while the bullet is fading out.
+var enabled := true
